@@ -1,7 +1,6 @@
 {
     "java.project.referencedLibraries": [
         "lib/**/*.jar",
-        "d:\\Download\\algs4.jar",
         "e:\\!!!GOBEYOND\\Coursera_Algorithm_1\\algs4.jar"
     ]
 }

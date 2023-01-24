@@ -7,13 +7,16 @@ public class Percolation {
     // head is the top virtual node and end is the bottom virtual node
     // index of a node is (row - 1) * m_n + column
     private WeightedQuickUnionUF m_nodes;
-    private WeightedQuickUnionUF m_nodesWithoutBottom;
 
     private int m_openNum;
 
     // get the index of the node in the UF
     private int GetUFIndex(int row, int column) {
         return (row - 1) * m_n + column;
+    }
+
+    public int GetN() {
+        return m_n;
     }
 
     // creates n-by-n grid, with all sites initially blocked
@@ -30,7 +33,11 @@ public class Percolation {
             }
         }
         m_nodes = new WeightedQuickUnionUF(n * n + 2);
-        m_nodesWithoutBottom = new WeightedQuickUnionUF(n * n + 1);
+        // Union for virtual nodes
+        for (int i = 1; i < n; i++) {
+            m_nodes.union(0, GetUFIndex(1, i));
+            m_nodes.union(n * n + 1, GetUFIndex(n, i));
+        }
 
         m_openNum = 0;
     }
@@ -40,35 +47,20 @@ public class Percolation {
         if (row < 1 || row > m_n || col < 1 || col > m_n) {
             throw new IllegalArgumentException();
         }
-        if (isOpen(row, col)) {
-            return;
-        }
 
         m_grid[row - 1][col - 1] = true;
         // union the site with open sites next to it
         if (row > 1 && isOpen(row - 1, col)) {
             m_nodes.union(GetUFIndex(row - 1, col), GetUFIndex(row, col));
-            m_nodesWithoutBottom.union(GetUFIndex(row - 1, col), GetUFIndex(row, col));
         }
         if (row < m_n && isOpen(row + 1, col)) {
             m_nodes.union(GetUFIndex(row + 1, col), GetUFIndex(row, col));
-            m_nodesWithoutBottom.union(GetUFIndex(row + 1, col), GetUFIndex(row, col));
         }
         if (col > 1 && isOpen(row, col - 1)) {
             m_nodes.union(GetUFIndex(row, col - 1), GetUFIndex(row, col));
-            m_nodesWithoutBottom.union(GetUFIndex(row, col - 1), GetUFIndex(row, col));
         }
         if (col < m_n && isOpen(row, col + 1)) {
             m_nodes.union(GetUFIndex(row, col + 1), GetUFIndex(row, col));
-            m_nodesWithoutBottom.union(GetUFIndex(row, col + 1), GetUFIndex(row, col));
-        }
-        // if the node is at the edge, union it to the virtual node
-        if (row == 1) {
-            m_nodes.union(0, GetUFIndex(row, col));
-            m_nodesWithoutBottom.union(0, GetUFIndex(row, col));
-        }
-        if (row == m_n) {
-            m_nodes.union(m_n * m_n + 1, GetUFIndex(row, col));
         }
 
         // update other metadata
@@ -90,12 +82,7 @@ public class Percolation {
             throw new IllegalArgumentException();
         }
         
-        if (!isOpen(row, col)) {
-            return false;
-        }
-        int root1 = m_nodesWithoutBottom.find(0);
-        int root2 = m_nodesWithoutBottom.find(GetUFIndex(row, col));
-        return root1 == root2;
+        return !m_grid[row - 1][col - 1];
     }
 
     // returns the number of open sites
@@ -105,8 +92,6 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        int root1 = m_nodes.find(0);
-        int root2 = m_nodes.find(m_n * m_n + 1);
-        return root1 == root2;
+        return m_nodes.connected(0, m_n * m_n + 1);
     }
 }
